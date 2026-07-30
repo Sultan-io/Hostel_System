@@ -39,7 +39,7 @@ COMMENT ON payment_status_enum IS
 --Meal ENUMs
 CREATE TYPE meal_type_enum AS ENUM
 (
-    'Breakfast', 'Lunch', 'Dinner';
+    'Breakfast', 'Lunch', 'Dinner'
 );
 COMMENT ON meal_type_enum IS
 'Represents the type of meal served.';
