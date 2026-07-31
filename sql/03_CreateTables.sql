@@ -190,3 +190,20 @@ CREATE TABLE
             OR ResolvedDate >= CreatedDate
         )
     );
+
+-- Table: Visitor
+CREATE TABLE
+    Visitor (
+        VisitorID BIGSERIAL PRIMARY KEY,
+        AdmissionID BIGINT NOT NULL,
+        VisitorName VARCHAR(100) NOT NULL,
+        CNIC VARCHAR(15) NOT NULL,
+        Relationship VARCHAR(50),
+        CheckIn TIMESTAMP NOT NULL,
+        CheckOut TIMESTAMP,
+        CONSTRAINT FK_Visitor_Admission FOREIGN KEY (AdmissionID) REFERENCES Admission (AdmissionID),
+        CONSTRAINT CHK_Visitor_CheckTime CHECK (
+            CheckOut IS NULL
+            OR CheckOut >= CheckIn
+        )
+    );
