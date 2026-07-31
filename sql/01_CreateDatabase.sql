@@ -1,1 +1,1 @@
-CREATE DATABSE "HostelManagementSystem";
+CREATE DATABASE "HostelManagementSystem";
