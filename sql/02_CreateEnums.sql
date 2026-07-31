@@ -9,7 +9,7 @@ CREATE TYPE student_status_enum as ENUM
 (
     'Active', 'Left', 'Suspended'
 );
-COMMENT ON student_status_enum IS 
+COMMENT ON TYPE student_status_enum IS 
 'Represents the current admission status of a student.';
 
 --Employee ENUMs
@@ -33,7 +33,7 @@ CREATE TYPE payment_status_enum AS ENUM
 (
     'Pending','Paid'
 );
-COMMENT ON payment_status_enum IS
+COMMENT ON TYPE payment_status_enum IS
 'Represents the payment status for electricity, meals and laundry.';
 
 --Meal ENUMs
@@ -41,7 +41,7 @@ CREATE TYPE meal_type_enum AS ENUM
 (
     'Breakfast', 'Lunch', 'Dinner'
 );
-COMMENT ON meal_type_enum IS
+COMMENT ON TYPE meal_type_enum IS
 'Represents the type of meal served.';
 
 -- Complaint ENUMs

@@ -164,6 +164,13 @@ CREATE TABLE
         CONSTRAINT CHK_MealUsage_Price CHECK (Price >= 0)
     );
 
+-- Table: ComplaintCategory
+CREATE TABLE
+    ComplaintCategory (
+        CategoryID BIGSERIAL PRIMARY KEY,
+        CategoryName VARCHAR(100) NOT NULL UNIQUE
+    );
+
 -- Table: Complaint
 CREATE TABLE
     Complaint (
