@@ -154,7 +154,7 @@ Design a production-ready PostgreSQL database for a real hostel owner.
 - Employee references Role via RoleID.
 - Historical prices stored in LaundryItem.UnitPrice and MealUsage.Price.
 
-# Phase 5 (Next Steps)
+# Next Steps
 
 1. Define all relationships.
 2. Decide cardinality (1:1, 1:N, M:N).
