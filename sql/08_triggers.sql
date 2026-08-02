@@ -1,0 +1,140 @@
+-- Prevent Double Bed Allocation
+CREATE OR REPLACE FUNCTION FN_TRG_CHECK_BED_AVAILABILITY () RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
+BEGIN
+    IF NEW.EndDate IS NULL THEN
+        IF EXISTS
+        (
+            SELECT 1
+            FROM BedAllocation
+            WHERE BedID = NEW.BedID
+              AND EndDate IS NULL
+              AND AllocationID <> COALESCE(NEW.AllocationID, -1)
+        ) THEN
+            RAISE EXCEPTION
+                'Bed % is already allocated.',
+                NEW.BedID;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER TRG_CHECK_BED_AVAILABILITY BEFORE INSERT
+OR
+UPDATE ON BEDALLOCATION FOR EACH ROW
+EXECUTE FUNCTION FN_TRG_CHECK_BED_AVAILABILITY ();
+
+-- Automatically Update Laundry Total
+CREATE OR REPLACE FUNCTION FN_TRG_UPDATE_LAUNDRY_TOTAL () RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
+DECLARE
+    V_LAUNDRY_ID BIGINT;
+BEGIN
+    V_LAUNDRY_ID := COALESCE(NEW.LaundryID, OLD.LaundryID);
+
+    UPDATE LaundryTransaction
+    SET TotalAmount =
+    (
+        SELECT COALESCE(
+            SUM(Quantity * UnitPrice),
+            0
+        )
+        FROM LaundryItem
+        WHERE LaundryID = V_LAUNDRY_ID
+    )
+    WHERE LaundryID = V_LAUNDRY_ID;
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$$;
+CREATE TRIGGER TRG_UPDATE_LAUNDRY_TOTAL
+AFTER INSERT
+OR
+UPDATE
+OR DELETE ON LAUNDRYITEM FOR EACH ROW
+EXECUTE FUNCTION FN_TRG_UPDATE_LAUNDRY_TOTAL ();
+
+-- Prevent Multiple Active Admissions
+CREATE OR REPLACE FUNCTION FN_TRG_CHECK_ACTIVE_ADMISSION () RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
+BEGIN
+    IF NEW.LeavingDate IS NULL THEN
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM Admission
+            WHERE StudentID = NEW.StudentID
+              AND LeavingDate IS NULL
+              AND AdmissionID <> COALESCE(NEW.AdmissionID, -1)
+        ) THEN
+
+            RAISE EXCEPTION
+            'Student % already has an active admission.',
+            NEW.StudentID;
+
+        END IF;
+
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER TRG_CHECK_ACTIVE_ADMISSION BEFORE INSERT
+OR
+UPDATE ON ADMISSION FOR EACH ROW
+EXECUTE FUNCTION FN_TRG_CHECK_ACTIVE_ADMISSION ();
+
+-- Prevent Visitor Check-Out Before Check-In
+CREATE OR REPLACE FUNCTION FN_TRG_VALIDATE_VISITOR () RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
+BEGIN
+    IF NEW.CheckOut IS NOT NULL
+       AND NEW.CheckOut < NEW.CheckIn THEN
+
+        RAISE EXCEPTION
+        'Check-out cannot be earlier than check-in.';
+
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER TRG_VALIDATE_VISITOR BEFORE INSERT
+OR
+UPDATE ON VISITOR FOR EACH ROW
+EXECUTE FUNCTION FN_TRG_VALIDATE_VISITOR ();
+
+-- Prevent Complaint Resolution Before Creation
+CREATE OR REPLACE FUNCTION FN_TRG_VALIDATE_COMPLAINT () RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
+BEGIN
+    IF NEW.ResolvedDate IS NOT NULL
+       AND NEW.ResolvedDate < NEW.CreatedDate THEN
+
+        RAISE EXCEPTION
+        'Resolved date cannot be earlier than created date.';
+
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER TRG_VALIDATE_COMPLAINT BEFORE INSERT
+OR
+UPDATE ON COMPLAINT FOR EACH ROW
+EXECUTE FUNCTION FN_TRG_VALIDATE_COMPLAINT ();
+
+-- Prevent Electricity Bill with Negative Amount
+CREATE OR REPLACE FUNCTION FN_TRG_VALIDATE_ELECTRICITY () RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
+BEGIN
+    IF NEW.Amount < 0 THEN
+
+        RAISE EXCEPTION
+        'Electricity bill amount cannot be negative.';
+
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER TRG_VALIDATE_ELECTRICITY BEFORE INSERT
+OR
+UPDATE ON ELECTRICITYBILL FOR EACH ROW
+EXECUTE FUNCTION FN_TRG_VALIDATE_ELECTRICITY ();
