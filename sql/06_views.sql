@@ -248,42 +248,33 @@ SELECT
     cr.StudentName,
     cr.HostelID,
     cr.HostelName,
-    COALESCE(
-        SUM(lt.TotalAmount) FILTER (
-            WHERE
-                lt.PaymentStatus = 'Pending'
-        ),
-        0
-    ) AS LaundryPending,
-    COALESCE(
-        SUM(mu.Price) FILTER (
-            WHERE
-                mu.Status = 'Pending'
-        ),
-        0
-    ) AS MealPending,
-    COALESCE(
-        SUM(lt.TotalAmount) FILTER (
-            WHERE
-                lt.PaymentStatus = 'Pending'
-        ),
-        0
-    ) + COALESCE(
-        SUM(mu.Price) FILTER (
-            WHERE
-                mu.Status = 'Pending'
-        ),
-        0
-    ) AS TotalOutstanding
+    COALESCE(laundry.LaundryPending, 0) AS LaundryPending,
+    COALESCE(meals.MealPending, 0) AS MealPending,
+    COALESCE(laundry.LaundryPending, 0) + COALESCE(meals.MealPending, 0) AS TotalOutstanding
 FROM
     vw_CurrentResidents cr
-    LEFT JOIN LaundryTransaction lt ON lt.AdmissionID = cr.AdmissionID
-    LEFT JOIN MealUsage mu ON mu.AdmissionID = cr.AdmissionID
-GROUP BY
-    cr.StudentID,
-    cr.StudentName,
-    cr.HostelID,
-    cr.HostelName;
+    LEFT JOIN (
+        SELECT
+            AdmissionID,
+            SUM(TotalAmount) AS LaundryPending
+        FROM
+            LaundryTransaction
+        WHERE
+            PaymentStatus = 'Pending'
+        GROUP BY
+            AdmissionID
+    ) laundry ON laundry.AdmissionID = cr.AdmissionID
+    LEFT JOIN (
+        SELECT
+            AdmissionID,
+            SUM(Price) AS MealPending
+        FROM
+            MealUsage
+        WHERE
+            Status = 'Pending'
+        GROUP BY
+            AdmissionID
+    ) meals ON meals.AdmissionID = cr.AdmissionID;
 
 /*View: vw_MonthlyServiceRevenue
 Description:
