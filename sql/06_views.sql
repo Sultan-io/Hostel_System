@@ -94,18 +94,20 @@ SELECT
     h.HostelID,
     h.HostelName,
     r.Capacity,
-    COUNT(bcs.BedID) FILTER (
+    COUNT(b.BedID) AS TotalBeds,
+    COUNT(b.BedID) FILTER (
         WHERE
             bcs.DerivedStatus = 'Occupied'
     ) AS BedsOccupied,
-    r.Capacity - COUNT(bcs.BedID) FILTER (
+    COUNT(b.BedID) FILTER (
         WHERE
-            bcs.DerivedStatus = 'Occupied'
+            bcs.DerivedStatus = 'Available'
     ) AS BedsVacant
 FROM
     Room r
     INNER JOIN Hostel h ON h.HostelID = r.HostelID
-    LEFT JOIN vw_BedCurrentStatus bcs ON bcs.RoomID = r.RoomID
+    LEFT JOIN Bed b ON b.RoomID = r.RoomID
+    LEFT JOIN vw_BedCurrentStatus bcs ON bcs.BedID = b.BedID
 GROUP BY
     r.RoomID,
     r.RoomNumber,
